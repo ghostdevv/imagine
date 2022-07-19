@@ -1,0 +1,5 @@
+name = "imagine"
+main = "src/index.ts"
+compatibility_date = "2022-07-17"
+
+account_id = "44321e1b7fbd29b56b65c1890a3bbee2"
