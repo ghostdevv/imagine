@@ -6,12 +6,9 @@ export interface Env {
     BROWSER: BrowserWorker;
 }
 
-function parseQuery(query: any) {
-    if (typeof query != 'string' || query?.trim()?.length == 0) {
-        return { key: 'imagine.gif', name: 'imagine' };
-    }
-
-    const name = query
+function parseQuery(pathname: any) {
+    const name = decodeURIComponent(pathname)
+        .slice(0, -4)
         .trim()
         .toLowerCase()
         .replace(/[^a-zA-Z0-9!? ]/gm, '');
@@ -42,14 +39,14 @@ export default {
     ): Promise<Response> {
         const url = new URL(request.url);
 
-        if (url.pathname == '/base') {
+        if (url.pathname == '/base.gif') {
             const file = await env.IMAGINE.get('base.gif');
             return gif(file?.body!);
         }
 
         if (url.pathname == '/') {
-            const file = await env.IMAGINE.get('imagine.gif');
-            return gif(file?.body!);
+            url.pathname = '/imagine.gif';
+            return Response.redirect(url.toString(), 307);
         }
 
         if (!url.pathname.trim().endsWith('.gif')) {
@@ -58,8 +55,7 @@ export default {
             });
         }
 
-        const rawKey = decodeURIComponent(url.pathname).slice(0, -4);
-        const { key, name } = parseQuery(rawKey);
+        const { key, name } = parseQuery(url.pathname);
         const file = await env.IMAGINE.get(key);
 
         if (file) {
