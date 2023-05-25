@@ -13,10 +13,6 @@ function parseQuery(pathname: any) {
         .toLowerCase()
         .replace(/[^a-zA-Z0-9!? ]/gm, '');
 
-    if (name == 'imagine') {
-        return { key: 'imagine.gif', name: 'imagine' };
-    }
-
     const key = `generated/${name.replace(/ /gm, '-')}.gif`;
 
     return { key, name };
