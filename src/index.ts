@@ -66,8 +66,10 @@ export default {
         await page.waitForSelector('#done');
 
         const data = await page.$eval('#done', (el) => el.innerText);
-        const bytes = JSON.parse(data);
 
+        await page.close();
+
+        const bytes = JSON.parse(data);
         const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
 
         await env.IMAGINE.put(key, blob.stream());
