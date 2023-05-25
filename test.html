@@ -77,10 +77,14 @@
             }
 
             gif.finish();
+            const bytes = gif.bytes();
+
+            output.src = URL.createObjectURL(new Blob([bytes], { type: 'text/gif' }))
 
             const doneElement = document.createElement('p');
 
             doneElement.id = 'done';
+            doneElement.style.display = 'none';
             doneElement.innerText = JSON.stringify([...gif.bytes()]);
 
             document.body.appendChild(doneElement);
