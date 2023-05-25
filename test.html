@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+    <body>
+        <img
+            id="baseGif"
+            src="https://8787-ghostdevv-imagine-45236k4r1bb.ws-eu98.gitpod.io/base"
+        />
+
+        <img id="output" />
+
+        <script>
+            /** @type {HTMLImageElement} */
+            const gifElement = document.getElementById('baseGif');
+
+            // Assuming the text is stored in a variable called "IMAGINE_TEXT"
+            const text = 'test';
+
+            // Create a canvas element
+            const canvas = document.createElement('canvas');
+            canvas.width = gifElement.width;
+            canvas.height = gifElement.height;
+
+            // Get the 2D context of the canvas
+            const ctx = canvas.getContext('2d');
+
+            // Create an array to store the modified frames
+            const modifiedFrames = [];
+
+            // Iterate through each frame of the GIF
+            for (let i = 0; i < gifElement.frames.length; i++) {
+                // Draw the current frame onto the canvas
+                ctx.drawImage(gifElement.frames[i].imageElement, 0, 0);
+
+                // Set the text styles
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 4;
+
+                // Calculate the position to center the text
+                const textX = canvas.width / 2;
+                const textY = canvas.height / 2;
+
+                // Draw the text onto the canvas
+                ctx.fillText(text, textX, textY);
+
+                // Save the modified frame
+                modifiedFrames.push(canvas.toDataURL('image/gif'));
+
+                // Clear the canvas for the next frame
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Convert the modified frames to a GIF data URI
+            const dataURI =
+                'data:image/gif;base64,' + btoa(modifiedFrames.join(''));
+
+            // Use the data URI as needed (e.g., set it as the source of an image element)
+            console.log(dataURI);
+        </script>
+    </body>
+</html>
