@@ -4,9 +4,6 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
     </head>
     <body>
         <img style="border: 4px solid green" id="baseGif" />
@@ -56,9 +53,10 @@
 
                 if (i >= 8) {
                     ctx.fillStyle = `rgba(255, 255, 255, ${(i - 8) * 0.1})`;
-                    ctx.font = "26px 'Lilita One'";
-                    ctx.textAlign = 'center';
+                    ctx.strokeStyle = `rgba(0, 0, 0, ${(i - 8) * 0.1})`;
+                    ctx.font = "bold 26px Arial";
                     ctx.textBaseline = 'middle';
+                    ctx.textAlign = 'center';
                     ctx.lineWidth = 1.5
 
                     const textX = width / 2;
