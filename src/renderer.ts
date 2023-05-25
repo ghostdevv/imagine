@@ -4,6 +4,9 @@ export default (text: string) => `<!DOCTYPE html>
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
     </head>
     <body>
         <img style="border: 4px solid green" id="baseGif" />
@@ -15,8 +18,8 @@ export default (text: string) => `<!DOCTYPE html>
         <script type="module">
             // CONFIG
 
-            const BASE_IMAGE = 'https://imagine.willow.sh/base';
-            const TEXT = String.raw\`${text}\`;
+            const BASE_IMAGE = 'https://imagine.willow.sh/base.gif';
+            const TEXT = String.raw\`${text}\`.toUpperCase();
 
             // SCRIPT
 
@@ -51,20 +54,18 @@ export default (text: string) => `<!DOCTYPE html>
                 const canvas = frame.getImage();
                 const ctx = canvas.getContext('2d');
 
-                if (i > 8) {
+                if (i >= 8) {
                     ctx.fillStyle = \`rgba(255, 255, 255, \${(i - 8) * 0.1})\`;
-                    ctx.font = '24px Arial, sans-serif';
+                    ctx.font = "26px 'Lilita One'";
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                    ctx.shadowBlur = 4;
+                    ctx.lineWidth = 1.5
 
-                    // Calculate the position to center the text
                     const textX = width / 2;
                     const textY = height / 4.5;
 
-                    // Draw the text onto the canvas
                     ctx.fillText(TEXT, textX, textY);
+                    ctx.strokeText(TEXT, textX, textY);
                 }
 
                 const { data } = ctx.getImageData(0, 0, width, height);
@@ -77,10 +78,14 @@ export default (text: string) => `<!DOCTYPE html>
             }
 
             gif.finish();
+            const bytes = gif.bytes();
+
+            output.src = URL.createObjectURL(new Blob([bytes], { type: 'text/gif' }))
 
             const doneElement = document.createElement('p');
 
             doneElement.id = 'done';
+            doneElement.style.display = 'none';
             doneElement.innerText = JSON.stringify([...gif.bytes()]);
 
             document.body.appendChild(doneElement);
