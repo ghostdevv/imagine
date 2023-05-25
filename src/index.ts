@@ -48,19 +48,18 @@ export default {
         }
 
         if (url.pathname == '/') {
-            const newUrl = new URL(url);
-            newUrl.pathname = '/imagine.gif';
-
-            return Response.redirect(newUrl.toString(), 307);
+            const file = await env.IMAGINE.get('imagine.gif');
+            return gif(file?.body!);
         }
 
-        if (url.pathname != '/imagine.gif') {
+        if (!url.pathname.trim().endsWith('.gif')) {
             return new Response('Not Found', {
                 status: 404,
             });
         }
 
-        const { key, name } = parseQuery(url.searchParams.get('q'));
+        const rawKey = decodeURIComponent(url.pathname).slice(0, -4);
+        const { key, name } = parseQuery(rawKey);
         const file = await env.IMAGINE.get(key);
 
         if (file) {
