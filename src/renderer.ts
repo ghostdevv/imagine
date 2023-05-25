@@ -15,7 +15,7 @@ export default (text: string) => `<!DOCTYPE html>
         <script type="module">
             // CONFIG
 
-            const BASE_IMAGE = 'https://8787-ghostdevv-imagine-hav8ertdm1i.ws-eu98.gitpod.io/base';
+            const BASE_IMAGE = 'https://imagine.willow.sh/base';
             const TEXT = String.raw\`${text}\`;
 
             // SCRIPT
