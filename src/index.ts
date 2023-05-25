@@ -9,6 +9,7 @@ export interface Env {
 function parseQuery(pathname: any) {
     const name = decodeURIComponent(pathname)
         .slice(0, -4)
+        .replace(/_/g, ' ')
         .trim()
         .toLowerCase()
         .replace(/[^a-zA-Z0-9!? ]/gm, '');
