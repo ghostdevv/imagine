@@ -47,6 +47,12 @@ export default {
             return gif(file?.body!);
         }
 
+        if (url.pathname != '/') {
+            return new Response('Not Found', {
+                status: 404,
+            });
+        }
+
         const { key, name } = parseQuery(url.searchParams.get('q'));
         const file = await env.IMAGINE.get(key);
 
