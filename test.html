@@ -15,8 +15,8 @@
         <script type="module">
             // CONFIG
 
-            const BASE_IMAGE = 'https://8787-ghostdevv-imagine-hav8ertdm1i.ws-eu98.gitpod.io/base';
-            const TEXT = 'Hello World';
+            const BASE_IMAGE = 'https://imagine.willow.sh/base';
+            const TEXT = String.raw`test`;
 
             // SCRIPT
 
@@ -78,31 +78,12 @@
 
             gif.finish();
 
-            /** @param {Blob} blob */
-            function getDataUri(blob) {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
+            const doneElement = document.createElement('p');
 
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
+            doneElement.id = 'done';
+            doneElement.innerText = JSON.stringify([...gif.bytes()]);
 
-                    reader.readAsDataURL(blob);
-                });
-            }
-
-            /** @type {Uint8Array} */
-            const bytes = gif.bytes();
-            // const blob = new Blob([bytes], { type: 'image/gif' });
-
-            // output.src = await getDataUri(blob);
-            // console.log(output.src)
-
-            // For puppeteer
-            const done = document.createElement('p');
-            done.id = 'done';
-            done.innerText = JSON.stringify([...bytes]);
-            document.body.appendChild(done);
+            document.body.appendChild(doneElement);
         </script>
     </body>
 </html>
