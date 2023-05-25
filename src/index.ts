@@ -47,7 +47,14 @@ export default {
             return gif(file?.body!);
         }
 
-        if (url.pathname != '/') {
+        if (url.pathname == '/') {
+            const newUrl = new URL(url);
+            newUrl.pathname = '/imagine.gif';
+
+            return Response.redirect(newUrl.toString(), 307);
+        }
+
+        if (url.pathname != '/imagine.gif') {
             return new Response('Not Found', {
                 status: 404,
             });
