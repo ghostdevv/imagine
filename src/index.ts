@@ -19,15 +19,6 @@ function parseQuery(pathname: any) {
     return { key, name };
 }
 
-function gif(file: BodyInit) {
-    return new Response(file, {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'image/gif',
-        },
-    });
-}
-
 export default {
     async fetch(
         request: Request,
@@ -35,11 +26,6 @@ export default {
         ctx: ExecutionContext,
     ): Promise<Response> {
         const url = new URL(request.url);
-
-        if (url.pathname == '/base.gif') {
-            const file = await env.IMAGINE.get('base.gif');
-            return gif(file?.body!);
-        }
 
         if (url.pathname == '/') {
             url.pathname = '/imagine.gif';
@@ -50,6 +36,31 @@ export default {
             return new Response('Not Found', {
                 status: 404,
             });
+        }
+
+        // Check cache api
+        const cacheKey = new Request(url.toString(), request);
+        const existingResponse = await caches.default.match(cacheKey);
+        if (existingResponse) return existingResponse;
+
+        // Response fn
+        const gif = (file: BodyInit) => {
+            const response = new Response(file, {
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Content-Type': 'image/gif',
+                    'Cache-Control': 's-maxage=604800',
+                },
+            });
+
+            ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+
+            return response;
+        };
+
+        if (url.pathname == '/base.gif') {
+            const file = await env.IMAGINE.get('base.gif');
+            return gif(file?.body!);
         }
 
         const { key, name } = parseQuery(url.pathname);
