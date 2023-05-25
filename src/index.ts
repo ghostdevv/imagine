@@ -1,4 +1,5 @@
 import puppeteer, { type BrowserWorker } from '@cloudflare/puppeteer';
+import renderer from './renderer';
 
 export interface Env {
     IMAGINE: R2Bucket;
@@ -24,6 +25,15 @@ function parseQuery(query: any) {
     return { key, name };
 }
 
+function gif(file: BodyInit) {
+    return new Response(file, {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'image/gif',
+        },
+    });
+}
+
 export default {
     async fetch(
         request: Request,
@@ -34,35 +44,30 @@ export default {
 
         if (url.pathname == '/base') {
             const file = await env.IMAGINE.get('base.gif');
-
-            return new Response(file?.body, {
-                headers: {
-                    'Content-Type': 'image/gif',
-                },
-            });
+            return gif(file?.body!);
         }
 
         const { key, name } = parseQuery(url.searchParams.get('q'));
         const file = await env.IMAGINE.get(key);
 
-        if (file)
-            return new Response(file.body, {
-                headers: {
-                    'Content-Type': 'image/gif',
-                },
-            });
+        if (file) {
+            return gif(file.body);
+        }
 
-        // const browser = await puppeteer.launch(env.BROWSER);
+        const browser = await puppeteer.launch(env.BROWSER);
 
-        // const [page] = await browser.pages();
-        // await page.goto('https://qifi.org/');
-        // await page.type('#ssid', 'homebase');
-        // await page.type('#key', 'tubulargagy');
-        // await page.click('#generate');
+        const [page] = await browser.pages();
 
-        // const res = await page.$eval('#qrcode canvas', (el) => el.toDataURL());
-        // console.log(res);
+        await page.setContent(renderer(name));
+        await page.waitForSelector('#done');
 
-        return new Response('asd');
+        const data = await page.$eval('#done', (el) => el.innerText);
+        const bytes = JSON.parse(data);
+
+        const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
+
+        await env.IMAGINE.put(key, blob);
+
+        return gif(blob);
     },
 };

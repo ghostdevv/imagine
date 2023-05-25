@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+export default (text: string) => `<!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -16,7 +16,7 @@
             // CONFIG
 
             const BASE_IMAGE = 'https://8787-ghostdevv-imagine-hav8ertdm1i.ws-eu98.gitpod.io/base';
-            const TEXT = 'Hello World';
+            const TEXT = String.raw\`${text}\`;
 
             // SCRIPT
 
@@ -52,7 +52,7 @@
                 const ctx = canvas.getContext('2d');
 
                 if (i > 8) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${(i - 8) * 0.1})`;
+                    ctx.fillStyle = \`rgba(255, 255, 255, \${(i - 8) * 0.1})\`;
                     ctx.font = '24px Arial, sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -106,3 +106,4 @@
         </script>
     </body>
 </html>
+`;
