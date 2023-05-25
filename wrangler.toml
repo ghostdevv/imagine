@@ -7,3 +7,4 @@ account_id = "44321e1b7fbd29b56b65c1890a3bbee2"
 [[r2_buckets]]
 binding = 'IMAGINE'
 bucket_name = 'imagine'
+preview_bucket_name = 'imagine'
