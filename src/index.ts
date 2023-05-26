@@ -12,7 +12,7 @@ function parseQuery(pathname: any) {
         .replace(/_/g, ' ')
         .trim()
         .toLowerCase()
-        .replace(/[^a-zA-Z0-9!? ]/gm, '');
+        .replace(/[^a-zA-Z0-9!?'";\(\)\= ]/gm, '');
 
     const key = `generated/${name.replace(/ /gm, '-')}.gif`;
 
