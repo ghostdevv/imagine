@@ -94,6 +94,7 @@ export default {
         const data = await page.$eval('#done', (el) => el.innerText);
 
         await page.close();
+        await browser.close();
 
         const bytes = JSON.parse(data);
         const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
