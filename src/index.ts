@@ -99,7 +99,7 @@ export default {
         const bytes = JSON.parse(data);
         const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
 
-        await env.IMAGINE.put(key, blob.stream());
+        ctx.waitUntil(env.IMAGINE.put(key, blob.stream()));
 
         return gif(blob);
     },
