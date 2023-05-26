@@ -1,4 +1,7 @@
-import puppeteer, { type BrowserWorker } from '@cloudflare/puppeteer';
+import puppeteer, {
+    type BrowserWorker,
+    type Browser,
+} from '@cloudflare/puppeteer';
 import renderer from './renderer';
 
 export interface Env {
@@ -12,7 +15,7 @@ function parseQuery(pathname: any) {
         .replace(/_/g, ' ')
         .trim()
         .toLowerCase()
-        .replace(/[^a-zA-Z0-9!?'";\(\)\= ]/gm, '');
+        .replace(/[^a-zA-Z0-9!?'";\:\(\)\= ]/gm, '');
 
     const key = `generated/${name.replace(/ /gm, '-')}.gif`;
 
@@ -70,7 +73,18 @@ export default {
             return gif(file.body);
         }
 
-        const browser = await puppeteer.launch(env.BROWSER);
+        let browser: Browser;
+
+        try {
+            browser = await puppeteer.launch(env.BROWSER);
+        } catch {
+            return new Response(
+                'No browsers available, try again in a sec lol',
+                {
+                    status: 500,
+                },
+            );
+        }
 
         const [page] = await browser.pages();
 
