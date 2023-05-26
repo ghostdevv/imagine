@@ -14,10 +14,10 @@ function parseQuery(pathname: any) {
         .slice(1, -4)
         .replace(/_/g, ' ')
         .trim()
-        .toLowerCase()
+        .toUpperCase()
         .slice(0, 60);
 
-    const key = `generated/${name.replace(/ /gm, '-')}.gif`;
+    const key = `generated/${name.replace(/ /gm, '-').toLowerCase()}.gif`;
 
     return { key, name };
 }

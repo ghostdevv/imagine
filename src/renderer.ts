@@ -16,7 +16,7 @@ export default (text: string) => `<!DOCTYPE html>
             // CONFIG
 
             const BASE_IMAGE = 'https://imagine.willow.sh/base.gif';
-            const TEXT = String.raw\`${text}\`.toUpperCase();
+            const TEXT = String.raw\`${text}\`;
 
             // SCRIPT
 
