@@ -11,7 +11,7 @@ export interface Env {
 
 function parseQuery(pathname: any) {
     const name = decodeURIComponent(pathname)
-        .slice(0, -4)
+        .slice(1, -4)
         .replace(/_/g, ' ')
         .trim()
         .toLowerCase()
