@@ -47,7 +47,8 @@ export default {
 
         const { key, keyPath, name } = parseQuery(url.pathname);
 
-        if (url.pathname.slice(1, -4) != key) {
+        //? Redirect invalid keys to correct one
+        if (decodeURIComponent(url.pathname.slice(1, -4)) != key) {
             url.pathname = `/${key}.gif`;
             return Response.redirect(url.toString(), 307);
         }
