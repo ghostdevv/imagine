@@ -2,10 +2,10 @@
     "name": "imagine",
     "private": "true",
     "devDependencies": {
-        "@cloudflare/puppeteer": "0.0.2-alpha",
-        "@cloudflare/workers-types": "^4.20230518.0",
-        "typescript": "^5.0.4",
-        "wrangler": "3.0.1"
+        "@cloudflare/puppeteer": "0.0.5",
+        "@cloudflare/workers-types": "^4.20231025.0",
+        "typescript": "^5.2.2",
+        "wrangler": "3.15.0"
     },
     "scripts": {
         "dev": "wrangler dev --remote",
