@@ -10,16 +10,20 @@ export interface Env {
 }
 
 function parseQuery(pathname: any) {
-    const name = decodeURIComponent(pathname)
+    const key = decodeURIComponent(pathname)
         .slice(1, -4)
-        .replace(/_/g, ' ')
+        .replace(/ /gm, '_')
         .trim()
-        .toUpperCase()
-        .slice(0, 60);
+        .toLowerCase()
+        .slice(0, 30);
 
-    const key = `generated/${name.replace(/ /gm, '-').toLowerCase()}.gif`;
+    const name = key.replace(/_/gm, ' ').toUpperCase();
 
-    return { key, name };
+    return {
+        keyPath: `generated/${key}.gif`,
+        key,
+        name,
+    };
 }
 
 export default {
@@ -41,8 +45,10 @@ export default {
             });
         }
 
-        if (url.pathname.slice(1).includes('/')) {
-            url.pathname = `/${url.pathname.slice(1).replace(/\//g, '_')}`;
+        const { key, keyPath, name } = parseQuery(url.pathname);
+
+        if (url.pathname.slice(1, -4) != key) {
+            url.pathname = `/${key}.gif`;
             return Response.redirect(url.toString(), 307);
         }
 
@@ -71,8 +77,7 @@ export default {
             return gif(file?.body!);
         }
 
-        const { key, name } = parseQuery(url.pathname);
-        const file = await env.IMAGINE.get(key);
+        const file = await env.IMAGINE.get(keyPath);
 
         if (file) {
             return gif(file.body);
@@ -104,7 +109,7 @@ export default {
         const bytes = JSON.parse(data);
         const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
 
-        ctx.waitUntil(env.IMAGINE.put(key, blob.stream()));
+        ctx.waitUntil(env.IMAGINE.put(keyPath, blob.stream()));
 
         return gif(blob);
     },
