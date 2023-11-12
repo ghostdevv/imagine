@@ -41,6 +41,11 @@ export default {
             });
         }
 
+        if (url.pathname.slice(1).includes('/')) {
+            url.pathname = `/${url.pathname.slice(1).replace(/\//g, '_')}`;
+            return Response.redirect(url.toString(), 307);
+        }
+
         // Check cache api
         const cacheKey = new Request(url.toString(), request);
         const existingResponse = await caches.default.match(cacheKey);
