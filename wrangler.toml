@@ -6,7 +6,7 @@ account_id = "44321e1b7fbd29b56b65c1890a3bbee2"
 
 node_compat = true
 workers_dev = true
-browser = { binding = "BROWSER", type = "browser" }
+browser = { binding = "BROWSER" }
 
 [[r2_buckets]]
 binding = 'IMAGINE'
