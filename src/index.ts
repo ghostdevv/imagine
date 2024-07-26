@@ -26,6 +26,24 @@ function parseQuery(pathname: any) {
     };
 }
 
+async function countGenerated(IMAGINE: R2Bucket) {
+    let cursor: string | undefined = undefined;
+    let count = 0;
+
+    while (true) {
+        const results = await IMAGINE.list({ cursor });
+        count += results.objects.length;
+
+        if (!results.truncated) {
+            break;
+        }
+
+        cursor = results.cursor;
+    }
+
+    return count;
+}
+
 export default {
     async fetch(
         request: Request,
@@ -33,6 +51,10 @@ export default {
         ctx: ExecutionContext,
     ): Promise<Response> {
         const url = new URL(request.url);
+
+        if (url.pathname == '/stats') {
+            return Response.json({ count: await countGenerated(env.IMAGINE) });
+        }
 
         if (url.pathname == '/') {
             url.pathname = '/imagine.gif';
