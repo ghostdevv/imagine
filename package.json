@@ -10,5 +10,12 @@
     "scripts": {
         "dev": "wrangler dev --remote",
         "deploy": "wrangler deploy"
+    },
+    "packageManager": "pnpm@10.12.1",
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild",
+            "workerd"
+        ]
     }
 }
