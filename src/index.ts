@@ -124,7 +124,9 @@ export default {
         await page.setContent(renderer(name));
         await page.waitForSelector('#done');
 
-        const data = await page.$eval('#done', (el) => el.innerText);
+        const data = await page.$eval('#done', (el): string =>
+            'innerText' in el ? (el.innerText as string) : 'err',
+        );
 
         await page.close();
         await browser.close();
