@@ -21,6 +21,12 @@ fn gif_response(gif: Vec<u8>) -> Result<Response> {
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     console_error_panic_hook::set_once();
 
+    if req.method() != Method::Get {
+        return ResponseBuilder::new()
+            .with_status(405)
+            .ok("Method Not Allowed\n");
+    }
+
     let url = req.url()?;
 
     let path = match percent_decode_str(url.path()).decode_utf8() {
