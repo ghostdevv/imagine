@@ -1,21 +1,21 @@
 #[derive(Debug, Clone)]
-pub struct QueryResult {
-    pub key_path: String,
-    pub key: String,
-    pub name: String,
+pub struct GifConfig {
+    pub bucket_path: String,
+    pub file_name: String,
+    pub text: String,
 }
 
-pub fn parse_query(pathname: &str) -> QueryResult {
+pub fn parse_gif_path(pathname: &str) -> GifConfig {
     if pathname == "/base.gif" {
-        return QueryResult {
-            key_path: "base.gif".to_string(),
-            key: "base".to_string(),
-            name: "base".to_string(),
+        return GifConfig {
+            bucket_path: "base.gif".to_string(),
+            file_name: "base".to_string(),
+            text: "base".to_string(),
         };
     }
 
     // Process the key
-    let key: String = pathname
+    let file_name: String = pathname
         .chars()
         .skip(1) // Skip first character
         .take(pathname.len().saturating_sub(5)) // Remove last 4 characters (accounting for the first char already removed)
@@ -28,12 +28,12 @@ pub fn parse_query(pathname: &str) -> QueryResult {
         .collect();
 
     // Create name from key
-    let name = key.replace('_', " ").to_uppercase();
+    let text = file_name.replace('_', " ").trim().to_uppercase();
 
-    QueryResult {
-        key_path: format!("generated/{}.gif", key),
-        key,
-        name,
+    GifConfig {
+        bucket_path: format!("generated/{}.gif", file_name),
+        file_name,
+        text,
     }
 }
 
@@ -42,24 +42,40 @@ mod tests {
     use super::*;
 
     #[test]
+    fn should_return_base_case() {
+        let result = parse_gif_path("/base.gif");
+        assert_eq!(result.file_name, "base");
+        assert_eq!(result.text, "base");
+        assert_eq!(result.bucket_path, "base.gif");
+    }
+
+    #[test]
     fn test_parse_query() {
-        let result = parse_query("/hello world test.png");
-        assert_eq!(result.key, "hello_world_test");
-        assert_eq!(result.name, "HELLO WORLD TEST");
-        assert_eq!(result.key_path, "generated/hello_world_test.gif");
+        let result = parse_gif_path("/hello world test.png");
+        assert_eq!(result.file_name, "hello_world_test");
+        assert_eq!(result.text, "HELLO WORLD TEST");
+        assert_eq!(result.bucket_path, "generated/hello_world_test.gif");
     }
 
     #[test]
     fn test_parse_query_with_long_string() {
-        let result = parse_query("/this is a very long string that should be truncated.png");
-        assert_eq!(result.key.len(), 30);
-        assert_eq!(result.key, "this_is_a_very_long_string_tha");
+        let result = parse_gif_path("/this is a very long string that should be truncated.png");
+        assert_eq!(result.file_name.len(), 30);
+        assert_eq!(result.file_name, "this_is_a_very_long_string_tha");
     }
 
     #[test]
     fn test_parse_query_with_extra_spaces() {
-        let result = parse_query("/  hello   world  .png");
-        assert_eq!(result.key, "hello___world");
-        assert_eq!(result.name, "HELLO   WORLD");
+        let result = parse_gif_path("/  hello   world  .png");
+        assert_eq!(result.file_name, "hello___world");
+        assert_eq!(result.text, "HELLO   WORLD");
+    }
+
+    #[test]
+    fn test_correctly_handles_empty() {
+        let result = parse_gif_path("/  .gif");
+        assert_eq!(result.file_name, "");
+        assert_eq!(result.text, "");
+        assert_eq!(result.bucket_path, "generated/.gif");
     }
 }

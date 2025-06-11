@@ -1,7 +1,6 @@
+use crate::parse_query::parse_gif_path;
 use percent_encoding::percent_decode_str;
 use worker::*;
-
-use crate::parse_query::parse_query;
 
 mod gif;
 mod parse_query;
@@ -46,29 +45,27 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         return ResponseBuilder::new().with_status(404).ok("not found\n");
     }
 
-    let query = parse_query(&path);
+    let gif_config = parse_gif_path(&path);
 
-    if query.name.is_empty() {
+    if gif_config.text.is_empty() {
         return Response::redirect(Url::parse(&format!("{}/imagine.gif", origin))?);
     }
 
-    // Check if URL needs normalization
-    let path_key = if path.len() > 5 {
-        &path[1..path.len() - 4]
-    } else {
-        ""
-    };
-
-    if path_key != query.key {
-        let normalized_url = format!("{}/{}.gif", origin, query.key);
-        return Response::redirect(Url::parse(&normalized_url)?);
+    if path != format!("/{}.gif", gif_config.file_name) {
+        return Response::redirect(Url::parse(&format!(
+            "{}/{}.gif",
+            origin, gif_config.file_name
+        ))?);
     }
 
     let imagine_bucket = env.bucket("IMAGINE")?;
 
-    if let Some(file) = imagine_bucket.get(query.key_path.clone()).execute().await? {
+    if let Some(file) = imagine_bucket
+        .get(gif_config.bucket_path.clone())
+        .execute()
+        .await?
+    {
         let gif = file.body().unwrap().bytes().await?;
-
         return gif_response(gif);
     }
 
@@ -82,10 +79,10 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .bytes()
         .await?;
 
-    let gif = gif::add_text_to_gif(&base_gif, &query.name)?;
+    let gif = gif::add_text_to_gif(&base_gif, &gif_config.text)?;
 
     imagine_bucket
-        .put(query.key_path, gif.clone())
+        .put(gif_config.bucket_path, gif.clone())
         .execute()
         .await?;
 
