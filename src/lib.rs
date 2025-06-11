@@ -85,7 +85,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
 
     if !path.trim().ends_with(".gif") {
-        return ResponseBuilder::new().with_status(404).ok("not found\n");
+        return ResponseBuilder::new()
+            .with_status(404)
+            .ok("please add .gif on the end of your url path\n");
     }
 
     let gif_config = parse_gif_path(&path);
