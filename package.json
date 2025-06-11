@@ -1,0 +1,19 @@
+{
+    "name": "imagine",
+    "private": true,
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy"
+    },
+    "devDependencies": {
+        "wrangler": "^4.19.2"
+    },
+    "packageManager": "pnpm@10.12.1",
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild",
+            "workerd",
+            "sharp"
+        ]
+    }
+}
