@@ -15,10 +15,14 @@ pub fn parse_gif_path(pathname: &str) -> GifConfig {
     }
 
     // Process the key
-    let file_name: String = pathname
-        .chars()
-        .skip(1) // Skip first character
-        .take(pathname.len().saturating_sub(5)) // Remove last 4 characters (accounting for the first char already removed)
+    let chars: Vec<char> = pathname.chars().collect();
+    let char_count = chars.len();
+
+    // Skip first character ("/") and remove last 4 characters (".gif")
+    let file_name: String = chars
+        .into_iter()
+        .skip(1)
+        .take(char_count.saturating_sub(5))
         .collect::<String>()
         .trim()
         .replace(' ', "_")
@@ -77,5 +81,21 @@ mod tests {
         assert_eq!(result.file_name, "");
         assert_eq!(result.text, "");
         assert_eq!(result.bucket_path, "generated/.gif");
+    }
+
+    #[test]
+    fn test_handles_emoji() {
+        let result = parse_gif_path("/😀.gif");
+        assert_eq!(result.file_name, "😀");
+        assert_eq!(result.text, "😀");
+        assert_eq!(result.bucket_path, "generated/😀.gif");
+    }
+
+    #[test]
+    fn test_handles_mixed_emoji_and_text() {
+        let result = parse_gif_path("/hello 😀 world.gif");
+        assert_eq!(result.file_name, "hello_😀_world");
+        assert_eq!(result.text, "HELLO 😀 WORLD");
+        assert_eq!(result.bucket_path, "generated/hello_😀_world.gif");
     }
 }

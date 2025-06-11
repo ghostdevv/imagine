@@ -23,9 +23,14 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
     let url = req.url()?;
 
-    let path = percent_decode_str(url.path())
-        .decode_utf8_lossy()
-        .into_owned();
+    let path = match percent_decode_str(url.path()).decode_utf8() {
+        Ok(decoded) => decoded.into_owned(),
+        Err(_) => {
+            return ResponseBuilder::new()
+                .with_status(400)
+                .ok("Invalid UTF-8 in path\n")
+        }
+    };
 
     let origin = match url.port() {
         Some(port) => format!(
@@ -51,7 +56,7 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         return Response::redirect(Url::parse(&format!("{}/imagine.gif", origin))?);
     }
 
-    if path != format!("/{}.gif", gif_config.file_name) {
+    if !path.eq_ignore_ascii_case(&format!("/{}.gif", gif_config.file_name)) {
         return Response::redirect(Url::parse(&format!(
             "{}/{}.gif",
             origin, gif_config.file_name
