@@ -523,6 +523,7 @@ dependencies = [
  "console_error_panic_hook",
  "gif",
  "image",
+ "imageproc",
  "rusttype",
  "text_on_image",
  "worker",

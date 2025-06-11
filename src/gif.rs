@@ -1,5 +1,6 @@
 use gif::{Decoder, Encoder, Frame, Repeat};
-use image::{DynamicImage, GenericImageView, Rgba, RgbaImage};
+use image::{DynamicImage, Rgba, RgbaImage};
+use imageproc::filter::gaussian_blur_f32;
 use rusttype::{Font, Scale};
 use std::io::Cursor;
 use text_on_image::{FontBundle, TextJustify, VerticalAnchor, WrapBehavior};
@@ -55,33 +56,37 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
         // Calculate alpha to fade in starting after frame 8, over 10 frames
         let alpha = if frame_number <= 8 {
             0
-        } else if frame_number < 19 {
-            // Use ease-in curve for smoother fade
-            let progress = (frame_number - 8) as f32 / 10.0;
-            let eased_progress = progress * progress; // Quadratic ease-in
+        } else if frame_number < 29 {
+            // Use gentler ease-in curve for earlier visibility
+            let progress = (frame_number - 8) as f32 / 20.0;
+            let eased_progress = progress.powf(0.7); // Gentler curve for earlier visibility
             (eased_progress * 255.0) as u8
         } else {
             255
         };
 
-        // Create font bundles with normal colors
-        let outline_font_bundle = FontBundle::new(
-            &font,
-            Scale { x: 30.0, y: 30.0 },
-            Rgba([0, 0, 0, 255]), // Black outline
-        );
+        // Always try to draw text (even if very faint)
+        let final_image = if alpha == 0 {
+            dynamic_image.to_rgba8()
+        } else {
+            // Create font bundles with normal colors
+            let outline_font_bundle = FontBundle::new(
+                &font,
+                Scale { x: 30.0, y: 30.0 },
+                Rgba([0, 0, 0, 255]), // Black outline
+            );
 
-        let text_font_bundle = FontBundle::new(
-            &font,
-            Scale { x: 30.0, y: 30.0 },
-            Rgba([255, 255, 255, 255]), // White text
-        );
-        
-        // Save the original image before drawing text
-        let original_image = dynamic_image.clone();
+            let text_font_bundle = FontBundle::new(
+                &font,
+                Scale { x: 30.0, y: 30.0 },
+                Rgba([255, 255, 255, 255]), // White text
+            );
+            
+            // Save the original image before drawing text
+            let original_image = dynamic_image.clone();
 
-        // Draw outline by applying black text with offsets
-        let outline_offsets = [
+            // Draw outline by applying black text with offsets
+            let outline_offsets = [
             (-2, -2),
             (-1, -2),
             (0, -2),
@@ -133,48 +138,64 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
             WrapBehavior::NoWrap,
         );
 
-        // Convert images to RGBA
-        let text_image = dynamic_image.to_rgba8();
-        let original_rgba = original_image.to_rgba8();
-        
-        // Create final image with gradual reveal using threshold mask
-        let mut final_image = RgbaImage::new(width as u32, height as u32);
-        
-        // Simple threshold-based reveal
-        for y in 0..height as u32 {
-            for x in 0..width as u32 {
-                let text_pixel = text_image.get_pixel(x, y);
-                let original_pixel = original_rgba.get_pixel(x, y);
-                
-                // Check if this pixel is part of the text
-                let is_text_pixel = text_pixel != original_pixel;
-                
-                if is_text_pixel && alpha > 0 {
-                    // Use a simple dithering pattern based on pixel position
-                    // This creates a gradual fade effect compatible with GIF format
-                    let pattern_value = match alpha {
-                        0..=31 => (x + y) % 8 == 0,
-                        32..=63 => (x + y) % 4 == 0,
-                        64..=95 => (x + y) % 3 == 0,
-                        96..=127 => (x + y) % 2 == 0,
-                        128..=159 => (x % 2 == 0) || (y % 2 == 0),
-                        160..=191 => (x + y) % 3 != 0,
-                        192..=223 => (x + y) % 4 != 0,
-                        224..=254 => (x + y) % 8 != 0,
-                        255 => true,
-                        _ => true,
-                    };
+            // Convert images to RGBA
+            let text_image = dynamic_image.to_rgba8();
+            let original_rgba = original_image.to_rgba8();
+            
+            // For frames during fade-in, we'll apply blur
+            if alpha < 255 {
+            // Create a mask for the text
+            let mut text_mask = RgbaImage::new(width as u32, height as u32);
+            for y in 0..height as u32 {
+                for x in 0..width as u32 {
+                    let text_pixel = text_image.get_pixel(x, y);
+                    let original_pixel = original_rgba.get_pixel(x, y);
                     
-                    if pattern_value {
-                        final_image.put_pixel(x, y, *text_pixel);
+                    // If pixels differ, it's text - make it white in the mask
+                    if text_pixel != original_pixel {
+                        text_mask.put_pixel(x, y, Rgba([255, 255, 255, 255]));
                     } else {
-                        final_image.put_pixel(x, y, *original_pixel);
+                        text_mask.put_pixel(x, y, Rgba([0, 0, 0, 255]));
                     }
-                } else {
-                    final_image.put_pixel(x, y, *original_pixel);
                 }
             }
-        }
+            
+            // Apply blur to the mask based on alpha (more blur = less visible)
+            // Use exponential curve for smoother fade-in at the start
+            let alpha_normalized = alpha as f32 / 255.0;
+            let blur_amount = (1.0 - alpha_normalized).powf(1.2) * 25.0;
+            let blurred_mask = if blur_amount > 0.1 {
+                gaussian_blur_f32(&text_mask, blur_amount)
+            } else {
+                text_mask
+            };
+            
+            // Blend images based on blurred mask
+            let mut blended_image = RgbaImage::new(width as u32, height as u32);
+            for y in 0..height as u32 {
+                for x in 0..width as u32 {
+                    let mask_value = blurred_mask.get_pixel(x, y)[0] as f32 / 255.0;
+                    let text_pixel = text_image.get_pixel(x, y);
+                    let original_pixel = original_rgba.get_pixel(x, y);
+                    
+                    // Boost visibility more aggressively in early frames
+                    let boosted_alpha = (alpha_normalized * 3.0).min(1.0);
+                    let visibility = mask_value * boosted_alpha;
+                    
+                    // Interpolate between original and text based on mask and visibility
+                    let r = (original_pixel[0] as f32 * (1.0 - visibility) + text_pixel[0] as f32 * visibility) as u8;
+                    let g = (original_pixel[1] as f32 * (1.0 - visibility) + text_pixel[1] as f32 * visibility) as u8;
+                    let b = (original_pixel[2] as f32 * (1.0 - visibility) + text_pixel[2] as f32 * visibility) as u8;
+                    
+                    blended_image.put_pixel(x, y, Rgba([r, g, b, 255]));
+                }
+            }
+                blended_image
+            } else {
+                // Full alpha - just use the text image as-is
+                text_image
+            }
+        };
 
         // Convert RGBA image back to indexed color for GIF, preserving original palette
         let (indexed_buffer, palette) = rgba_to_indexed(&final_image, width, height, palette)?;
