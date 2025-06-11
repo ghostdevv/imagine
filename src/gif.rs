@@ -6,33 +6,7 @@ use std::io::Cursor;
 use text_on_image::{FontBundle, TextJustify, VerticalAnchor, WrapBehavior};
 use worker::{Error, Result};
 
-fn replace_emojis_with_text(text: &str) -> String {
-    text.chars()
-        .map(|c| {
-            let replacement = match c {
-                '😀' | '😃' | '😄' => ":)",
-                '😢' | '😭' => ":(",
-                '😎' => "B)",
-                '❤' | '💕' | '💖' => "<3",
-                '👍' => "+1",
-                '👎' => "-1",
-                '🎉' | '🎊' => "*",
-                '✨' => "*",
-                '🔥' => "fire",
-                '💯' => "100",
-                '👋' => "wave",
-                c if c as u32 >= 0x1F300 && c as u32 <= 0x1F9FF => "?",
-                _ => return c.to_string(),
-            };
-            replacement.to_string()
-        })
-        .collect()
-}
-
 pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
-    // Replace emojis with text representations
-    let display_text = replace_emojis_with_text(text);
-
     // Decode the input GIF
     let mut decoder =
         Decoder::new(Cursor::new(gif_data)).map_err(|e| Error::from(e.to_string()))?;
@@ -142,7 +116,7 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
             for (dx, dy) in outline_offsets.iter() {
                 text_on_image::text_on_image(
                     &mut dynamic_image,
-                    &display_text,
+                    text,
                     &outline_font_bundle,
                     text_x + dx,
                     text_y + dy,
@@ -155,7 +129,7 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
             // Draw main text on top
             text_on_image::text_on_image(
                 &mut dynamic_image,
-                &display_text,
+                text,
                 &text_font_bundle,
                 text_x,
                 text_y,
