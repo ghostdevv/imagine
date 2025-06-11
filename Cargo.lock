@@ -526,6 +526,7 @@ dependencies = [
  "imageproc",
  "percent-encoding",
  "rusttype",
+ "serde_json",
  "text_on_image",
  "worker",
  "worker-macros",

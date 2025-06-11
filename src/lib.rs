@@ -17,6 +17,29 @@ fn gif_response(gif: Vec<u8>) -> Result<Response> {
         })
 }
 
+async fn handle_stats_route(imagine_bucket: Bucket) -> Result<Response> {
+    let mut cursor: Option<String> = None;
+    let mut count = 0;
+
+    loop {
+        let mut list_request = imagine_bucket.list();
+
+        if let Some(ref c) = cursor {
+            list_request = list_request.cursor(c.clone());
+        }
+
+        let response = list_request.execute().await?;
+        count += response.objects().len();
+
+        cursor = response.cursor();
+        if cursor.is_none() {
+            break;
+        }
+    }
+
+    Response::from_json(&serde_json::json!({ "count": count }))
+}
+
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     console_error_panic_hook::set_once();
@@ -28,6 +51,11 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
 
     let url = req.url()?;
+
+    if url.path() == "/stats" {
+        let imagine_bucket = env.bucket("IMAGINE")?;
+        return handle_stats_route(imagine_bucket).await;
+    }
 
     let path = match percent_decode_str(url.path()).decode_utf8() {
         Ok(decoded) => decoded.into_owned(),
