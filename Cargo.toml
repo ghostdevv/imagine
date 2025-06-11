@@ -1,8 +1,7 @@
 [package]
 name = "imagine"
-version = "0.1.0"
 edition = "2021"
-authors = ["GHOST <ghostdevbusiness@gmail.com>"]
+authors = ["GHOST <hello@willow.sh>"]
 
 [package.metadata.release]
 release = false

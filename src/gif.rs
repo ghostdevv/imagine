@@ -27,7 +27,7 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
         .map_err(|e| Error::from(e.to_string()))?;
 
     // Load font
-    let font_data = Vec::from(include_bytes!("./roboto.ttf"));
+    let font_data = Vec::from(include_bytes!("../vendor/roboto-bold-v3.011.ttf"));
     let font = Font::try_from_vec(font_data).ok_or_else(|| Error::from("Failed to load font"))?;
 
     // Calculate text position (centered horizontally, near top)
@@ -72,13 +72,13 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
             // Create font bundles with normal colors
             let outline_font_bundle = FontBundle::new(
                 &font,
-                Scale { x: 30.0, y: 30.0 },
+                Scale { x: 25.0, y: 25.0 },
                 Rgba([0, 0, 0, 255]), // Black outline
             );
 
             let text_font_bundle = FontBundle::new(
                 &font,
-                Scale { x: 30.0, y: 30.0 },
+                Scale { x: 25.0, y: 25.0 },
                 Rgba([255, 255, 255, 255]), // White text
             );
 
