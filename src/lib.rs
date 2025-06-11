@@ -5,8 +5,8 @@ use worker::*;
 mod gif;
 mod parse_query;
 
-fn gif_response(gif: Vec<u8>) -> Result<Response> {
-    ResponseBuilder::new()
+async fn gif_response(gif: Vec<u8>, req: &Request) -> Result<Response> {
+    let mut response = ResponseBuilder::new()
         .with_header("Cache-Control", "public, max-age=604800, s-maxage=604800")?
         .with_header("Access-Control-Allow-Origin", "*")?
         .with_header("Content-Type", "image/gif")?
@@ -14,7 +14,11 @@ fn gif_response(gif: Vec<u8>) -> Result<Response> {
         .map(|mut res| {
             res.headers_mut().set("Content-Type", "image/gif").unwrap();
             res
-        })
+        })?;
+
+    Cache::default().put(req, response.cloned()?).await?;
+
+    Ok(response)
 }
 
 async fn handle_stats_route(imagine_bucket: Bucket) -> Result<Response> {
@@ -97,6 +101,11 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         ))?);
     }
 
+    let cached_response = Cache::default().get(&req, false).await?;
+    if let Some(response) = cached_response {
+        return Ok(response);
+    }
+
     let imagine_bucket = env.bucket("IMAGINE")?;
 
     if let Some(file) = imagine_bucket
@@ -105,7 +114,7 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .await?
     {
         let gif = file.body().unwrap().bytes().await?;
-        return gif_response(gif);
+        return gif_response(gif, &req).await;
     }
 
     let base_gif = imagine_bucket
@@ -125,5 +134,5 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .execute()
         .await?;
 
-    return gif_response(gif);
+    return gif_response(gif, &req).await;
 }
