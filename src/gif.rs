@@ -32,7 +32,7 @@ fn replace_emojis_with_text(text: &str) -> String {
 pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
     // Replace emojis with text representations
     let display_text = replace_emojis_with_text(text);
-    
+
     // Decode the input GIF
     let mut decoder =
         Decoder::new(Cursor::new(gif_data)).map_err(|e| Error::from(e.to_string()))?;
@@ -107,115 +107,121 @@ pub fn add_text_to_gif(gif_data: &[u8], text: &str) -> Result<Vec<u8>> {
                 Scale { x: 30.0, y: 30.0 },
                 Rgba([255, 255, 255, 255]), // White text
             );
-            
+
             // Save the original image before drawing text
             let original_image = dynamic_image.clone();
 
             // Draw outline by applying black text with offsets
             let outline_offsets = [
-            (-2, -2),
-            (-1, -2),
-            (0, -2),
-            (1, -2),
-            (2, -2),
-            (-2, -1),
-            (-1, -1),
-            (0, -1),
-            (1, -1),
-            (2, -1),
-            (-2, 0),
-            (-1, 0),
-            (1, 0),
-            (2, 0),
-            (-2, 1),
-            (-1, 1),
-            (0, 1),
-            (1, 1),
-            (2, 1),
-            (-2, 2),
-            (-1, 2),
-            (0, 2),
-            (1, 2),
-            (2, 2),
-        ];
+                (-2, -2),
+                (-1, -2),
+                (0, -2),
+                (1, -2),
+                (2, -2),
+                (-2, -1),
+                (-1, -1),
+                (0, -1),
+                (1, -1),
+                (2, -1),
+                (-2, 0),
+                (-1, 0),
+                (1, 0),
+                (2, 0),
+                (-2, 1),
+                (-1, 1),
+                (0, 1),
+                (1, 1),
+                (2, 1),
+                (-2, 2),
+                (-1, 2),
+                (0, 2),
+                (1, 2),
+                (2, 2),
+            ];
 
-        for (dx, dy) in outline_offsets.iter() {
+            for (dx, dy) in outline_offsets.iter() {
+                text_on_image::text_on_image(
+                    &mut dynamic_image,
+                    &display_text,
+                    &outline_font_bundle,
+                    text_x + dx,
+                    text_y + dy,
+                    TextJustify::Center,
+                    VerticalAnchor::Top,
+                    WrapBehavior::NoWrap,
+                );
+            }
+
+            // Draw main text on top
             text_on_image::text_on_image(
                 &mut dynamic_image,
                 &display_text,
-                &outline_font_bundle,
-                text_x + dx,
-                text_y + dy,
+                &text_font_bundle,
+                text_x,
+                text_y,
                 TextJustify::Center,
                 VerticalAnchor::Top,
                 WrapBehavior::NoWrap,
             );
-        }
-
-        // Draw main text on top
-        text_on_image::text_on_image(
-            &mut dynamic_image,
-            &display_text,
-            &text_font_bundle,
-            text_x,
-            text_y,
-            TextJustify::Center,
-            VerticalAnchor::Top,
-            WrapBehavior::NoWrap,
-        );
 
             // Convert images to RGBA
             let text_image = dynamic_image.to_rgba8();
             let original_rgba = original_image.to_rgba8();
-            
+
             // For frames during fade-in, we'll apply blur
             if alpha < 255 {
-            // Create a mask for the text
-            let mut text_mask = RgbaImage::new(width as u32, height as u32);
-            for y in 0..height as u32 {
-                for x in 0..width as u32 {
-                    let text_pixel = text_image.get_pixel(x, y);
-                    let original_pixel = original_rgba.get_pixel(x, y);
-                    
-                    // If pixels differ, it's text - make it white in the mask
-                    if text_pixel != original_pixel {
-                        text_mask.put_pixel(x, y, Rgba([255, 255, 255, 255]));
-                    } else {
-                        text_mask.put_pixel(x, y, Rgba([0, 0, 0, 255]));
+                // Create a mask for the text
+                let mut text_mask = RgbaImage::new(width as u32, height as u32);
+                for y in 0..height as u32 {
+                    for x in 0..width as u32 {
+                        let text_pixel = text_image.get_pixel(x, y);
+                        let original_pixel = original_rgba.get_pixel(x, y);
+
+                        // If pixels differ, it's text - make it white in the mask
+                        if text_pixel != original_pixel {
+                            text_mask.put_pixel(x, y, Rgba([255, 255, 255, 255]));
+                        } else {
+                            text_mask.put_pixel(x, y, Rgba([0, 0, 0, 255]));
+                        }
                     }
                 }
-            }
-            
-            // Apply blur to the mask based on alpha (more blur = less visible)
-            // Use exponential curve for smoother fade-in at the start
-            let alpha_normalized = alpha as f32 / 255.0;
-            let blur_amount = (1.0 - alpha_normalized).powf(1.2) * 25.0;
-            let blurred_mask = if blur_amount > 0.1 {
-                gaussian_blur_f32(&text_mask, blur_amount)
-            } else {
-                text_mask
-            };
-            
-            // Blend images based on blurred mask
-            let mut blended_image = RgbaImage::new(width as u32, height as u32);
-            for y in 0..height as u32 {
-                for x in 0..width as u32 {
-                    let mask_value = blurred_mask.get_pixel(x, y)[0] as f32 / 255.0;
-                    let text_pixel = text_image.get_pixel(x, y);
-                    let original_pixel = original_rgba.get_pixel(x, y);
-                    
-                    // Boost visibility more aggressively in early frames
-                    let boosted_alpha = (alpha_normalized * 3.0).min(1.0);
-                    let visibility = mask_value * boosted_alpha;
-                    
-                    // Interpolate between original and text based on mask and visibility
-                    let r = (original_pixel[0] as f32 * (1.0 - visibility) + text_pixel[0] as f32 * visibility) as u8;
-                    let g = (original_pixel[1] as f32 * (1.0 - visibility) + text_pixel[1] as f32 * visibility) as u8;
-                    let b = (original_pixel[2] as f32 * (1.0 - visibility) + text_pixel[2] as f32 * visibility) as u8;
-                    
-                    blended_image.put_pixel(x, y, Rgba([r, g, b, 255]));
+
+                // Apply blur to the mask based on alpha (more blur = less visible)
+                // Use exponential curve for smoother fade-in at the start
+                let alpha_normalized = alpha as f32 / 255.0;
+                let blur_amount = (1.0 - alpha_normalized).powf(1.2) * 25.0;
+                let blurred_mask = if blur_amount > 0.1 {
+                    gaussian_blur_f32(&text_mask, blur_amount)
+                } else {
+                    text_mask
+                };
+
+                // Blend images based on blurred mask
+                let mut blended_image = RgbaImage::new(width as u32, height as u32);
+                for y in 0..height as u32 {
+                    for x in 0..width as u32 {
+                        let mask_value = blurred_mask.get_pixel(x, y)[0] as f32 / 255.0;
+                        let text_pixel = text_image.get_pixel(x, y);
+                        let original_pixel = original_rgba.get_pixel(x, y);
+
+                        // Boost visibility more aggressively in early frames
+                        let boosted_alpha = (alpha_normalized * 3.0).min(1.0);
+                        let visibility = mask_value * boosted_alpha;
+
+                        // Interpolate between original and text based on mask and visibility
+                        let r = (original_pixel[0] as f32 * (1.0 - visibility)
+                            + text_pixel[0] as f32 * visibility)
+                            as u8;
+                        let g = (original_pixel[1] as f32 * (1.0 - visibility)
+                            + text_pixel[1] as f32 * visibility)
+                            as u8;
+                        let b = (original_pixel[2] as f32 * (1.0 - visibility)
+                            + text_pixel[2] as f32 * visibility)
+                            as u8;
+
+                        blended_image.put_pixel(x, y, Rgba([r, g, b, 255]));
+                    }
                 }
-            }
                 blended_image
             } else {
                 // Full alpha - just use the text image as-is
