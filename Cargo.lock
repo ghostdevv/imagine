@@ -524,6 +524,7 @@ dependencies = [
  "gif",
  "image",
  "imageproc",
+ "percent-encoding",
  "rusttype",
  "text_on_image",
  "worker",
